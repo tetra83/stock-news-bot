@@ -1,0 +1,61 @@
+name: Stock News Bot
+
+on:
+  schedule:
+    - cron: '0 * * * *'      # 毎時（collect）
+    - cron: '0 23,3,9 * * *' # 日本時間8時・12時・18時（send）
+    - cron: '0 17 * * *'     # 日本時間深夜2時（cleanup）
+  workflow_dispatch:           # 手動実行ボタン
+
+jobs:
+  collect:
+    if: github.event.schedule == '0 * * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install gspread google-auth newsapi-python yfinance beautifulsoup4 requests
+      - run: echo "$GOOGLE_CREDENTIALS" | base64 -d > credentials.json
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      - run: python collect_news.py
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+
+  send:
+    if: github.event.schedule == '0 23,3,9 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install gspread google-auth anthropic
+      - run: echo "$GOOGLE_CREDENTIALS" | base64 -d > credentials.json
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      - run: python send_digest.py
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+
+  cleanup:
+    if: github.event.schedule == '0 17 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install gspread google-auth
+      - run: echo "$GOOGLE_CREDENTIALS" | base64 -d > credentials.json
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      - run: python cleanup.py
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
