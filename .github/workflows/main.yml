@@ -2,14 +2,21 @@ name: Stock News Bot
 
 on:
   schedule:
-    - cron: '0 * * * *'      # 毎時（collect）
-    - cron: '0 23,3,9 * * *' # 日本時間8時・12時・18時（send）
-    - cron: '0 17 * * *'     # 日本時間深夜2時（cleanup）
-  workflow_dispatch:           # 手動実行ボタン
+    - cron: '0 * * * *'
+    - cron: '0 23,3,9 * * *'
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'collect / send / cleanup'
+        required: true
+        default: 'collect'
 
 jobs:
   collect:
-    if: ${{ github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch' }}
+    if: >
+      github.event.schedule == '0 * * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'collect')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,7 +33,9 @@ jobs:
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
 
   send:
-    if: ${{ github.event.schedule == '0 23,3,9 * * *' || github.event_name == 'workflow_dispatch' }}
+    if: >
+      github.event.schedule == '0 23,3,9 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'send')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -45,7 +54,9 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
   cleanup:
-    if: ${{ github.event.schedule == '0 17 * * *' || github.event_name == 'workflow_dispatch' }}
+    if: >
+      github.event.schedule == '0 17 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'cleanup')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
