@@ -5,7 +5,10 @@ from newsapi import NewsApiClient
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
-from config import *
+import os
+CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', '/home/tetora/stock-news-bot/credentials.json')
+SHEET_ID = os.environ.get('SHEET_ID', '')
+NEWSAPI_KEY = os.environ.get('NEWSAPI_KEY', '')
 
 # Google Sheets接続
 scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']

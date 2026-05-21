@@ -4,7 +4,13 @@ import anthropic
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
-from config import *
+import os
+CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', '/home/tetora/stock-news-bot/credentials.json')
+SHEET_ID = os.environ.get('SHEET_ID', '')
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+ANTHROPIC_MODEL = 'claude-sonnet-4-5'
+GMAIL_ADDRESS = os.environ.get('GMAIL_ADDRESS', '')
+GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
 
 # フィルタキーワード
 FILTER_KEYWORDS = [

@@ -1,6 +1,8 @@
 import gspread
 from google.oauth2.service_account import Credentials
-from config import *
+import os
+CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', '/home/tetora/stock-news-bot/credentials.json')
+SHEET_ID = os.environ.get('SHEET_ID', '')
 
 MAX_UNSENT = 1000
 
