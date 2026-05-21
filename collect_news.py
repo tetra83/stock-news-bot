@@ -6,7 +6,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import os
-CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', '/home/tetora/stock-news-bot/credentials.json')
+CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', 'credentials.json')
 SHEET_ID = os.environ.get('SHEET_ID', '')
 NEWSAPI_KEY = os.environ.get('NEWSAPI_KEY', '')
 
