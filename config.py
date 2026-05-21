@@ -1,7 +1,0 @@
-CREDENTIALS_FILE = '/home/tetora/stock-news-bot/credentials.json'
-SHEET_ID = '1Ejf2ZmQgolC5V-ijGlIpQbMItrDnYyfVmqvBnZsx3Yc'
-NEWSAPI_KEY = 'c792d45a56f846a59e32480c6f039e7e'
-ANTHROPIC_API_KEY = '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'
-ANTHROPIC_MODEL = 'claude-sonnet-4-5'
-GMAIL_ADDRESS = 'amamizon83@gmail.com'
-GMAIL_APP_PASSWORD = 'waky egbt iudz borx'
