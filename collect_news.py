@@ -2,7 +2,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import yfinance as yf
 from newsapi import NewsApiClient
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import requests
 from bs4 import BeautifulSoup
 import os
@@ -17,7 +17,8 @@ client = gspread.authorize(creds)
 sheet = client.open_by_key(SHEET_ID).sheet1
 
 rows = []
-now = datetime.now().strftime('%Y-%m-%d %H:%M')
+JST = timezone(timedelta(hours=9))
+now = datetime.now(JST).strftime('%Y-%m-%d %H:%M')
 
 # 株価取得
 tickers = {
@@ -50,20 +51,24 @@ except Exception as e:
 
 # 適時開示取得
 try:
-    today = datetime.now().strftime('%Y%m%d')
+    today = datetime.now(JST).strftime('%Y%m%d')
     url = f'https://www.release.tdnet.info/inbs/I_list_001_{today}.html'
-    res = requests.get(url, timeout=10)
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    res = requests.get(url, timeout=10, headers=headers)
     res.encoding = 'utf-8'
     soup = BeautifulSoup(res.text, 'html.parser')
-    for row in soup.select('tr.main-list')[:50]:
-        cols = row.select('td')
-        if len(cols) >= 4:
-            time_str = cols[0].get_text(strip=True)
-            company = cols[2].get_text(strip=True)
-            title = cols[3].get_text(strip=True)
-            link_tag = cols[3].find('a')
-            link = 'https://www.release.tdnet.info' + link_tag['href'] if link_tag else ''
-            rows.append([now, '適時開示', f'{company}：{title}', time_str, link, ''])
+    for td_time in soup.select('td.kjTime')[:50]:
+        tr = td_time.parent
+        time_str = td_time.get_text(strip=True)
+        code_td = tr.select_one('td.kjCode')
+        name_td = tr.select_one('td.kjName')
+        title_td = tr.select_one('td.kjTitle')
+        code = code_td.get_text(strip=True) if code_td else ''
+        company = name_td.get_text(strip=True) if name_td else ''
+        title = title_td.get_text(strip=True) if title_td else ''
+        link_tag = title_td.find('a') if title_td else None
+        link = 'https://www.release.tdnet.info/inbs/' + link_tag['href'] if link_tag else ''
+        rows.append([now, '適時開示', f'{company}（{code}）：{title}', time_str, link, ''])
 except Exception as e:
     print(f'適時開示取得失敗: {e}')
 
