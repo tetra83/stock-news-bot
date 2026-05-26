@@ -31,9 +31,9 @@ if not unsent:
     print('未送信データなし')
     exit()
 
-# フィルタ：株価は全件、適時開示・ニュースはキーワード一致のみ
+# フィルタ：株価・出来高急増は全件、適時開示・ニュースはキーワード一致のみ
 def is_important(r):
-    if r.get('type') == '株価':
+    if r.get('type') in ('株価', '出来高急増'):
         return True
     text = f"{r.get('name','')} {r.get('value','')}".lower()
     return any(kw.lower() in text for kw in FILTER_KEYWORDS)
@@ -52,13 +52,19 @@ if not filtered:
 text = '\n'.join([f"{r['type']} | {r['name']} | {r['value']}" for r in filtered])
 
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+surge_stocks = [r for r in filtered if r.get('type') == '出来高急増']
+surge_section = ''
+if surge_stocks:
+    surge_list = '\n'.join([f"- {r['name']} ({r['value']})" for r in surge_stocks])
+    surge_section = f"\n\n【出来高急増銘柄】\n{surge_list}\n↑ 各銘柄について出来高急増の理由を3行で説明してください（背景・関連ニュース・注目点）。"
+
 response = claude.messages.create(
     model=ANTHROPIC_MODEL,
-    max_tokens=1000,
+    max_tokens=1500,
     messages=[{
         'role': 'user',
-        'content': f"""以下は株価・経済ニュース・適時開示のデータです。
-好決算・業績上方修正・増配に関する情報を優先して、日本株や製品需給への影響を日本語で簡潔にまとめてください。
+        'content': f"""以下は株価・経済ニュース・適時開示・出来高急増銘柄のデータです。
+好決算・業績上方修正・増配に関する情報を優先して、日本株への影響を日本語で簡潔にまとめてください。{surge_section}
 
 {text}"""
     }]

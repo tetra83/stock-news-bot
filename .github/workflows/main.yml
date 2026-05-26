@@ -2,8 +2,8 @@ name: Stock News Bot
 
 on:
   schedule:
-    - cron: '0 * * * *'
-    - cron: '0 23,3,9 * * *'
+    - cron: '0 8 * * *'
+    - cron: '0 9 * * *'
     - cron: '0 17 * * *'
   workflow_dispatch:
     inputs:
@@ -15,7 +15,7 @@ on:
 jobs:
   collect:
     if: >
-      github.event.schedule == '0 * * * *' ||
+      github.event.schedule == '0 8 * * *' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'collect')
     runs-on: ubuntu-latest
     steps:
@@ -34,7 +34,7 @@ jobs:
 
   send:
     if: >
-      github.event.schedule == '0 23,3,9 * * *' ||
+      github.event.schedule == '0 9 * * *' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'send')
     runs-on: ubuntu-latest
     steps:
