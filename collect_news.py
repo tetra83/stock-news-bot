@@ -20,29 +20,18 @@ rows = []
 JST = timezone(timedelta(hours=9))
 now = datetime.now(JST).strftime('%Y-%m-%d %H:%M')
 
-# 株価取得
-tickers = {
-    '日経平均': '^N225',
-    'ドル円': 'JPY=X',
-    'S&P500': '^GSPC'
-}
-
-for name, symbol in tickers.items():
-    try:
-        ticker = yf.Ticker(symbol)
-        price = ticker.fast_info['last_price']
-        rows.append([now, '株価', name, str(round(price, 2)), '', ''])
-    except Exception as e:
-        print(f'{name} 取得失敗: {e}')
-
-# ニュース取得
+# 機関投資家が注目するニュース取得（業界問わず）
 try:
     newsapi = NewsApiClient(api_key=NEWSAPI_KEY)
     articles = newsapi.get_everything(
-        q='Japan economy OR semiconductor OR 日本株',
+        q=(
+            'institutional investor OR hedge fund OR fund manager OR '
+            'earnings beat OR raised guidance OR analyst upgrade OR '
+            'Japan stocks OR Tokyo Stock Exchange OR JPX OR Nikkei'
+        ),
         language='en',
         sort_by='publishedAt',
-        page_size=10
+        page_size=15
     )
     for article in articles['articles']:
         rows.append([now, 'ニュース', article['title'], article['description'] or '', article['url'], ''])
@@ -72,23 +61,50 @@ try:
 except Exception as e:
     print(f'適時開示取得失敗: {e}')
 
-# 出来高急増銘柄の取得
+# 出来高急増銘柄の取得（日経225主要50銘柄）
 WATCH_TICKERS = {
-    '7203.T': 'トヨタ自動車', '6758.T': 'ソニーグループ', '9984.T': 'ソフトバンクG',
-    '6861.T': 'キーエンス', '8306.T': '三菱UFJ', '9432.T': 'NTT',
-    '6902.T': 'デンソー', '7267.T': '本田技研', '6954.T': 'ファナック',
-    '8035.T': '東京エレクトロン', '6367.T': 'ダイキン', '4519.T': '中外製薬',
-    '9433.T': 'KDDI', '6501.T': '日立製作所', '8058.T': '三菱商事',
-    '9983.T': 'ファーストリテイリング', '8316.T': '三井住友FG', '4063.T': '信越化学',
-    '6594.T': '日本電産(ニデック)', '7974.T': '任天堂', '6098.T': 'リクルートHD',
-    '4661.T': 'オリエンタルランド', '2914.T': '日本たばこ産業', '7741.T': 'HOYA',
-    '3382.T': 'セブン&アイHD',
+    # 輸送機器
+    '7203.T': 'トヨタ自動車', '7267.T': '本田技研', '7201.T': '日産自動車', '7270.T': 'SUBARU',
+    # 電機・精密
+    '6758.T': 'ソニーグループ', '6861.T': 'キーエンス', '6954.T': 'ファナック',
+    '6902.T': 'デンソー', '6501.T': '日立製作所', '6702.T': '富士通',
+    '6723.T': 'ルネサスエレクトロニクス', '6762.T': 'TDK', '6971.T': '京セラ',
+    '7751.T': 'キヤノン', '7733.T': 'オリンパス',
+    # 半導体・電子部品
+    '8035.T': '東京エレクトロン', '4063.T': '信越化学', '6594.T': '日本電産(ニデック)',
+    # 通信・IT
+    '9984.T': 'ソフトバンクG', '9432.T': 'NTT', '9433.T': 'KDDI',
+    '6098.T': 'リクルートHD', '3659.T': 'ネクソン',
+    # 金融
+    '8306.T': '三菱UFJ', '8316.T': '三井住友FG', '8411.T': 'みずほFG',
+    # 商社
+    '8058.T': '三菱商事', '8031.T': '三井物産', '8053.T': '住友商事',
+    # 小売・消費
+    '9983.T': 'ファーストリテイリング', '3382.T': 'セブン&アイHD',
+    # 製薬・医療
+    '4519.T': '中外製薬', '4568.T': '第一三共', '4502.T': '武田薬品', '4543.T': 'テルモ',
+    # 素材・化学
+    '3407.T': '旭化成',
+    # 機械
+    '6301.T': '小松製作所', '6273.T': 'SMC',
+    # エンタメ・サービス
+    '7974.T': '任天堂', '4661.T': 'オリエンタルランド', '9602.T': '東宝',
+    # その他製造
+    '6367.T': 'ダイキン', '5108.T': 'ブリヂストン',
+    '7741.T': 'HOYA', '2914.T': '日本たばこ産業',
+    # 食品・生活
+    '2802.T': '味の素', '2503.T': 'キリンHD',
+    # 富士フイルム・資生堂
+    '4901.T': '富士フイルム', '4911.T': '資生堂',
 }
 
 try:
     tickers_list = list(WATCH_TICKERS.keys())
     raw = yf.download(tickers_list, period='20d', auto_adjust=True, progress=False)
     vol_df = raw['Volume']
+
+    # 実際の最新取引日を取得（yfinanceが返したデータの最終日）
+    latest_trading_date = vol_df.index[-1].strftime('%Y/%m/%d')
 
     surge_stocks = []
     for ticker in tickers_list:
@@ -98,15 +114,15 @@ try:
         if len(vol) < 5:
             continue
         avg_vol = vol.iloc[:-1].mean()
-        latest_vol = vol.iloc[-1]
-        if avg_vol > 0 and latest_vol >= avg_vol * 2:
-            ratio = latest_vol / avg_vol
+        target_vol = vol.iloc[-1]
+        if avg_vol > 0 and target_vol >= avg_vol * 2:
+            ratio = target_vol / avg_vol
             surge_stocks.append((ticker, WATCH_TICKERS[ticker], ratio))
 
     surge_stocks.sort(key=lambda x: x[2], reverse=True)
-    for ticker, name, ratio in surge_stocks[:5]:
-        rows.append([now, '出来高急増', f'{name}（{ticker}）', f'{ratio:.1f}倍', '', ''])
-        print(f'出来高急増: {name} {ratio:.1f}倍')
+    for ticker, name, ratio in surge_stocks[:10]:
+        rows.append([now, '出来高急増', f'{name}（{ticker}）', f'{latest_trading_date} {ratio:.1f}倍', '', ''])
+        print(f'出来高急増: {name} {latest_trading_date} {ratio:.1f}倍')
 
 except Exception as e:
     print(f'出来高急増取得失敗: {e}')

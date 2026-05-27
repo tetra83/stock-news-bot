@@ -2,9 +2,7 @@ name: Stock News Bot
 
 on:
   schedule:
-    - cron: '0 8 * * *'
-    - cron: '0 9 * * *'
-    - cron: '0 17 * * *'
+    - cron: '0 8 * * *'  # 17:00 JST
   workflow_dispatch:
     inputs:
       job:
@@ -33,9 +31,12 @@ jobs:
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
 
   send:
+    needs: [collect]
     if: >
-      github.event.schedule == '0 9 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'send')
+      always() && (
+        (github.event.schedule == '0 8 * * *' && needs.collect.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'send')
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -54,9 +55,12 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
   cleanup:
+    needs: [send]
     if: >
-      github.event.schedule == '0 17 * * *' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'cleanup')
+      always() && (
+        (github.event.schedule == '0 8 * * *' && needs.send.result == 'success') ||
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'cleanup')
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

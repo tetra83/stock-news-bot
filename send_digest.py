@@ -12,11 +12,13 @@ ANTHROPIC_MODEL = 'claude-sonnet-4-5'
 GMAIL_ADDRESS = os.environ.get('GMAIL_ADDRESS', '')
 GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
 
-# フィルタキーワード
+# フィルタキーワード（適時開示・ニュースの重要度判定）
 FILTER_KEYWORDS = [
     '増収', '増益', '上方修正', '業績修正', '増配', '特別配当',
-    '過去最高', '最高益', '好決算', '黒字転換',
-    'beat', 'raised guidance', 'dividend increase', 'record profit', 'upgraded'
+    '過去最高', '最高益', '好決算', '黒字転換', 'TOB', 'M&A', '買収', '合併',
+    '自社株買い', '株式分割',
+    'beat', 'raised guidance', 'dividend increase', 'record profit', 'upgraded',
+    'institutional', 'hedge fund', 'analyst upgrade', 'earnings',
 ]
 
 scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -31,9 +33,9 @@ if not unsent:
     print('未送信データなし')
     exit()
 
-# フィルタ：株価・出来高急増は全件、適時開示・ニュースはキーワード一致のみ
+# フィルタ：出来高急増は全件、適時開示・ニュースはキーワード一致のみ
 def is_important(r):
-    if r.get('type') in ('株価', '出来高急増'):
+    if r.get('type') == '出来高急増':
         return True
     text = f"{r.get('name','')} {r.get('value','')}".lower()
     return any(kw.lower() in text for kw in FILTER_KEYWORDS)
@@ -42,7 +44,6 @@ filtered = [r for r in unsent if is_important(r)]
 
 if not filtered:
     print('重要データなし、送信スキップ')
-    # 未重要データもsentフラグを立てる
     all_rows = sheet.get_all_values()
     for i, row in enumerate(all_rows[1:], start=2):
         if str(row[5]).strip() == '':
@@ -52,27 +53,55 @@ if not filtered:
 text = '\n'.join([f"{r['type']} | {r['name']} | {r['value']}" for r in filtered])
 
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
 surge_stocks = [r for r in filtered if r.get('type') == '出来高急増']
+news_items = [r for r in filtered if r.get('type') == 'ニュース']
+disclosure_items = [r for r in filtered if r.get('type') == '適時開示']
+
 surge_section = ''
 if surge_stocks:
+    # value例: "2025/05/27 3.2倍" → 日付を取り出して明示
     surge_list = '\n'.join([f"- {r['name']} ({r['value']})" for r in surge_stocks])
-    surge_section = f"\n\n【出来高急増銘柄】\n{surge_list}\n↑ 各銘柄について出来高急増の理由を3行で説明してください（背景・関連ニュース・注目点）。"
+    surge_section = f"""
+【出来高急増銘柄（取引日付き）】
+{surge_list}
+↑ 各銘柄について、その日に出来高が急増した背景・理由・機関投資家の注目ポイントを3行で説明してください。"""
+
+news_section = ''
+if news_items:
+    news_list = '\n'.join([f"- {r['name']}" for r in news_items])
+    news_section = f"""
+【機関投資家向けニュース】
+{news_list}"""
+
+disclosure_section = ''
+if disclosure_items:
+    disc_list = '\n'.join([f"- {r['name']}" for r in disclosure_items])
+    disclosure_section = f"""
+【重要適時開示】
+{disc_list}"""
 
 response = claude.messages.create(
     model=ANTHROPIC_MODEL,
-    max_tokens=1500,
+    max_tokens=2000,
     messages=[{
         'role': 'user',
-        'content': f"""以下は株価・経済ニュース・適時開示・出来高急増銘柄のデータです。
-好決算・業績上方修正・増配に関する情報を優先して、日本株への影響を日本語で簡潔にまとめてください。{surge_section}
+        'content': f"""以下は本日収集した株式市場データです。市況概況は不要です。
+以下の順で日本語で簡潔にまとめてください：
 
+1. 出来高急増銘柄：各銘柄の急増背景・関連ニュース・機関投資家の注目ポイントを3行で
+2. 機関投資家・ヘッジファンドが注目しているニュースのポイント（業界問わず）
+3. 重要な適時開示（増収増益・上方修正・M&A・自社株買いなど）
+{surge_section}{news_section}{disclosure_section}
+
+生データ：
 {text}"""
     }]
 )
 summary = response.content[0].text
 now = datetime.now().strftime('%Y-%m-%d %H:%M')
 msg = MIMEText(summary, 'plain', 'utf-8')
-msg['Subject'] = f'市場ダイジェスト {now}'
+msg['Subject'] = f'株式情報ダイジェスト {now}'
 msg['From'] = GMAIL_ADDRESS
 msg['To'] = GMAIL_ADDRESS
 
