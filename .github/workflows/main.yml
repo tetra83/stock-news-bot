@@ -17,8 +17,8 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'collect')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install gspread google-auth newsapi-python yfinance beautifulsoup4 requests feedparser
@@ -45,8 +45,8 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install gspread google-auth anthropic newsapi-python yfinance requests beautifulsoup4 feedparser
@@ -69,8 +69,8 @@ jobs:
       )
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - run: pip install gspread google-auth
