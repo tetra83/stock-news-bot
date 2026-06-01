@@ -11,7 +11,7 @@ from collect_market import format_market_summary
 CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', 'credentials.json')
 SHEET_ID = os.environ.get('SHEET_ID', '')
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-ANTHROPIC_MODEL = 'claude-sonnet-4-5'
+ANTHROPIC_MODEL = 'claude-sonnet-4-6'
 GMAIL_ADDRESS = os.environ.get('GMAIL_ADDRESS', '')
 GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
 
