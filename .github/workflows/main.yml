@@ -64,12 +64,9 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
   cleanup:
-    needs: [send]
     if: >
-      always() && (
-        (github.event.schedule == '0 8 * * *' && needs.send.result == 'success') ||
-        (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'cleanup')
-      )
+      github.event.schedule == '0 8 * * *' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.job == 'cleanup')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
