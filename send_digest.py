@@ -54,9 +54,13 @@ market_summary = format_market_summary()
 if not filtered and not keyword_articles:
     print('重要データなし、市場概況のみ送信')
     all_rows = sheet.get_all_values()
-    for i, row in enumerate(all_rows[1:], start=2):
-        if str(row[5]).strip() == '':
-            sheet.update_cell(i, 6, 1)
+    updates = [
+        {'range': f'F{i}', 'values': [[1]]}
+        for i, row in enumerate(all_rows[1:], start=2)
+        if str(row[5]).strip() == ''
+    ]
+    if updates:
+        sheet.batch_update(updates)
     body = '本日は特段の重要ニュースはありませんでした。'
     if market_summary:
         body += f'\n\n{market_summary}'
@@ -162,6 +166,10 @@ if keyword_articles:
         print(f'[WARN] キーワードニュース送信済みマーク失敗: {e}')
 
 all_rows = sheet.get_all_values()
-for i, row in enumerate(all_rows[1:], start=2):
-    if str(row[5]).strip() == '':
-        sheet.update_cell(i, 6, 1)
+updates = [
+    {'range': f'F{i}', 'values': [[1]]}
+    for i, row in enumerate(all_rows[1:], start=2)
+    if str(row[5]).strip() == ''
+]
+if updates:
+    sheet.batch_update(updates)

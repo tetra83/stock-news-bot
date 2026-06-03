@@ -235,8 +235,8 @@ def mark_as_sent(ids: list[int]) -> None:
     sheet = _get_sheet()
     if sheet is None:
         raise RuntimeError('SHEET_ID または credentials.json が設定されていません')
-    for row_num in ids:
-        sheet.update_cell(row_num, 6, 1)
+    updates = [{'range': f'F{row_num}', 'values': [[1]]} for row_num in ids]
+    sheet.batch_update(updates)
 
 
 # ── コマンド ──────────────────────────────────────────────────────────────────
