@@ -9,6 +9,7 @@ import os
 CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', 'credentials.json')
 SHEET_ID = os.environ.get('SHEET_ID', '')
 NEWSAPI_KEY = os.environ.get('NEWSAPI_KEY', '')
+EODHD_API_KEY = os.environ.get('EODHD_API_KEY', '')
 
 # Google Sheets接続
 scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -126,6 +127,53 @@ try:
 
 except Exception as e:
     print(f'出来高急増取得失敗: {e}')
+
+# EODHD ニュース取得
+try:
+    if EODHD_API_KEY:
+        resp = requests.get(
+            'https://eodhd.com/api/news',
+            params={'api_token': EODHD_API_KEY, 'limit': 20},
+            timeout=10,
+        )
+        articles = resp.json()
+        for article in articles:
+            title = article.get('title', '')
+            content = (article.get('content', '') or '')[:200]
+            link = article.get('link', '')
+            if title:
+                rows.append([now, 'ニュース', title, content, link, ''])
+        print(f'EODHD ニュース: {len(articles)}件')
+except Exception as e:
+    print(f'EODHD ニュース取得失敗: {e}')
+
+# EODHD 決算カレンダー（前日〜7日後）
+try:
+    if EODHD_API_KEY:
+        from_date = (datetime.now(JST) - timedelta(days=1)).strftime('%Y-%m-%d')
+        to_date = (datetime.now(JST) + timedelta(days=7)).strftime('%Y-%m-%d')
+        resp = requests.get(
+            'https://eodhd.com/api/calendar/earnings',
+            params={'api_token': EODHD_API_KEY, 'from': from_date, 'to': to_date},
+            timeout=15,
+        )
+        earnings = resp.json().get('earnings') or []
+        for item in earnings:
+            code = item.get('code', '')
+            report_date = item.get('report_date') or item.get('date', '')
+            actual = item.get('actual')
+            estimate = item.get('estimate')
+            company = WATCH_TICKERS.get(code, code)
+            if actual is not None and estimate is not None and estimate != 0:
+                diff_pct = (actual - estimate) / abs(estimate) * 100
+                beat_miss = f'Beat +{diff_pct:.1f}%' if diff_pct > 0 else f'Miss {diff_pct:.1f}%'
+                value = f'{report_date} EPS実績:{actual} 予想:{estimate} ({beat_miss})'
+            else:
+                value = f'{report_date} EPS予想:{estimate}'
+            rows.append([now, '決算', f'{company}（{code}）', value, '', ''])
+        print(f'EODHD 決算カレンダー: {len(earnings)}件')
+except Exception as e:
+    print(f'EODHD 決算カレンダー取得失敗: {e}')
 
 # Sheetsに追記
 sheet.append_rows(rows)

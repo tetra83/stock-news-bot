@@ -34,7 +34,7 @@ unsent = [r for r in records if str(r.get('sent', '')).strip() == '']
 
 # フィルタ：出来高急増は全件、適時開示・ニュースはキーワード一致のみ
 def is_important(r):
-    if r.get('type') == '出来高急増':
+    if r.get('type') in ('出来高急増', '決算'):
         return True
     text = f"{r.get('name','')} {r.get('value','')}".lower()
     return any(kw.lower() in text for kw in FILTER_KEYWORDS)
@@ -78,6 +78,7 @@ claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 surge_stocks     = [r for r in filtered if r.get('type') == '出来高急増']
 news_items       = [r for r in filtered if r.get('type') == 'ニュース']
 disclosure_items = [r for r in filtered if r.get('type') == '適時開示']
+earnings_items   = [r for r in filtered if r.get('type') == '決算']
 
 surge_section = ''
 if surge_stocks:
@@ -101,6 +102,13 @@ if disclosure_items:
 【重要適時開示】
 {disc_list}"""
 
+earnings_section = ''
+if earnings_items:
+    earn_list = '\n'.join([f"- {r['name']} ({r['value']})" for r in earnings_items])
+    earnings_section = f"""
+【決算・ファンダメンタルズ（EODHD）】
+{earn_list}"""
+
 keyword_section = ''
 if keyword_articles:
     kw_list = '\n'.join([f"- {a['title']} (スコア:{a['score']})" for a in keyword_articles])
@@ -117,10 +125,11 @@ response = claude.messages.create(
 以下の順で日本語で簡潔にまとめてください：
 
 1. 出来高急増銘柄：各銘柄の急増背景・関連ニュース・機関投資家の注目ポイントを3行で
-2. 機関投資家・ヘッジファンドが注目しているニュースのポイント（業界問わず）
-3. 重要な適時開示（増収増益・上方修正・M&A・自社株買いなど）
-4. キーワードスコア上位ニュースのポイント（スコアが高いほど重要度が高い）
-{surge_section}{news_section}{disclosure_section}{keyword_section}
+2. 決算・ファンダメンタルズ：EPS Beat/Miss の背景と株価インパクトを2行で
+3. 機関投資家・ヘッジファンドが注目しているニュースのポイント（業界問わず）
+4. 重要な適時開示（増収増益・上方修正・M&A・自社株買いなど）
+5. キーワードスコア上位ニュースのポイント（スコアが高いほど重要度が高い）
+{surge_section}{earnings_section}{news_section}{disclosure_section}{keyword_section}
 
 生データ：
 {text}"""

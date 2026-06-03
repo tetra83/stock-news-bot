@@ -33,6 +33,7 @@ jobs:
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
       - run: python collect_keywords.py
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
