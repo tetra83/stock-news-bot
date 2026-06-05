@@ -9,17 +9,7 @@ SHEET_ID = os.environ.get('SHEET_ID', '')
 
 JST = timezone(timedelta(hours=9))
 
-WATCH: list[tuple[str, str, str]] = [
-    # (ticker, type, 表示名)
-    ('^N225',    '市場指数', '日経225'),
-    ('1306.T',   '市場指数', 'TOPIX(ETF)'),
-    ('^GSPC',    '市場指数', 'S&P500'),
-    ('^IXIC',    '市場指数', 'NASDAQ'),
-    ('^DJI',     '市場指数', 'ダウ工業株'),
-    ('USDJPY=X', '為替',    'USD/JPY'),
-    ('EURJPY=X', '為替',    'EUR/JPY'),
-    ('^TNX',     '債券',    '米10年債利回り'),
-]
+WATCH: list[tuple[str, str, str]] = []
 
 YIELD_TICKERS = {'^TNX', '^TYX', '^IRX'}
 
@@ -66,7 +56,7 @@ def format_market_summary() -> str:
     if not sections:
         return ''
 
-    parts = ['【市場概況】']
+    parts = ['【為替・債券】']
     for type_, lines in sections.items():
         parts.append(f'▼{type_}')
         parts.extend(lines)

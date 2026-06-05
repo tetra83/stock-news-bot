@@ -37,9 +37,6 @@ jobs:
       - run: python collect_keywords.py
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
-      - run: python collect_market.py
-        env:
-          SHEET_ID: ${{ secrets.SHEET_ID }}
 
   send:
     if: >

@@ -13,7 +13,7 @@ sheet = client.open_by_key(SHEET_ID).sheet1
 
 all_rows = sheet.get_all_values()
 
-# sent=1の行を削除
+# sent=1の行を削除（翌日分を新鮮な状態で蓄積するため）
 sent_rows = [i+2 for i, row in enumerate(all_rows[1:]) if str(row[5]).strip() == '1']
 for row_num in sorted(sent_rows, reverse=True):
     sheet.delete_rows(row_num)

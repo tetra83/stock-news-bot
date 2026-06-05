@@ -6,7 +6,6 @@ from email.mime.text import MIMEText
 from datetime import datetime
 import os
 from collect_keywords import get_unsent, mark_as_sent
-from collect_market import format_market_summary
 
 CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', 'credentials.json')
 SHEET_ID = os.environ.get('SHEET_ID', '')
@@ -48,11 +47,8 @@ except Exception as e:
     print(f'[WARN] キーワードニュース取得失敗: {e}')
     keyword_articles = []
 
-# 市場概況は常に取得（重要データがなくても送信する）
-market_summary = format_market_summary()
-
 if not filtered and not keyword_articles:
-    print('重要データなし、市場概況のみ送信')
+    print('重要データなし、通知のみ送信')
     all_rows = sheet.get_all_values()
     updates = [
         {'range': f'F{i}', 'values': [[1]]}
@@ -61,18 +57,15 @@ if not filtered and not keyword_articles:
     ]
     if updates:
         sheet.batch_update(updates)
-    body = '本日は特段の重要ニュースはありませんでした。'
-    if market_summary:
-        body += f'\n\n{market_summary}'
     now = datetime.now().strftime('%Y-%m-%d %H:%M')
-    msg = MIMEText(body, 'plain', 'utf-8')
+    msg = MIMEText('本日は特段の重要ニュースはありませんでした。', 'plain', 'utf-8')
     msg['Subject'] = f'株式情報ダイジェスト {now}'
     msg['From'] = GMAIL_ADDRESS
     msg['To'] = GMAIL_ADDRESS
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
         smtp.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
         smtp.send_message(msg)
-    print('市場概況のみ送信完了')
+    print('通知送信完了')
     exit()
 
 text = '\n'.join([f"{r['type']} | {r['name']} | {r['value']}" for r in filtered])
@@ -143,9 +136,6 @@ response = claude.messages.create(
 summary = response.content[0].text
 
 body = summary
-if market_summary:
-    body += f'\n\n{market_summary}'
-
 now = datetime.now().strftime('%Y-%m-%d %H:%M')
 msg = MIMEText(body, 'plain', 'utf-8')
 msg['Subject'] = f'株式情報ダイジェスト {now}'
