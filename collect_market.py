@@ -9,7 +9,19 @@ SHEET_ID = os.environ.get('SHEET_ID', '')
 
 JST = timezone(timedelta(hours=9))
 
-WATCH: list[tuple[str, str, str]] = []
+WATCH: list[tuple[str, str, str]] = [
+    # 注目個別銘柄
+    ('BE',     '注目銘柄', 'Bloom Energy'),
+    ('ARM',    '注目銘柄', 'ARM'),
+    ('RKLB',   '注目銘柄', 'Rocket Lab'),
+    ('7777.T', '注目銘柄', '3Dマトリックス'),
+    ('186A.T', '注目銘柄', 'アストロスケール'),
+    # 業界ETF
+    ('BOTZ',   'AI',       'AI・ロボ(BOTZ)'),
+    ('QTUM',   '量子',     '量子コンピュータ(QTUM)'),
+    ('SOXX',   '半導体',   '半導体(SOXX)'),
+    ('UFO',    '宇宙',     '宇宙(UFO)'),
+]
 
 YIELD_TICKERS = {'^TNX', '^TYX', '^IRX'}
 
@@ -56,7 +68,7 @@ def format_market_summary() -> str:
     if not sections:
         return ''
 
-    parts = ['【為替・債券】']
+    parts = ['【注目銘柄・業界ETF】']
     for type_, lines in sections.items():
         parts.append(f'▼{type_}')
         parts.extend(lines)

@@ -1,0 +1,30 @@
+name: Cleanup Old Data
+
+on:
+  schedule:
+    # JST 2:00 = UTC 17:00（前日）
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials file
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+
+      - name: Delete rows older than 30 days
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          CREDENTIALS_FILE: credentials.json
+        run: python cleanup.py

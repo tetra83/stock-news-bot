@@ -1,0 +1,44 @@
+name: Collect News
+
+on:
+  schedule:
+    # 3時間おき（JST 0,3,6,9,12,15,18,21時 = UTC 15,18,21,0,3,6,9,12時）
+    - cron: '0 15,18,21,0,3,6,9,12 * * *'
+  workflow_dispatch:
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write credentials file
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+
+      - name: Collect news
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          EODHD_API_KEY: ${{ secrets.EODHD_API_KEY }}
+          CREDENTIALS_FILE: credentials.json
+        run: python collect_news.py
+
+      - name: Collect keyword news (RSS)
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          CREDENTIALS_FILE: credentials.json
+        run: python collect_keywords.py
+
+      - name: Collect market data
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          CREDENTIALS_FILE: credentials.json
+        run: python collect_market.py

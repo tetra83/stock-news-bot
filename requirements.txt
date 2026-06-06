@@ -1,0 +1,9 @@
+gspread==6.2.1
+google-auth==2.50.0
+yfinance==0.2.52
+newsapi-python==0.2.7
+anthropic
+requests==2.32.4
+beautifulsoup4==4.14.3
+feedparser
+lxml

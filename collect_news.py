@@ -121,9 +121,13 @@ try:
             surge_stocks.append((ticker, WATCH_TICKERS[ticker], ratio))
 
     surge_stocks.sort(key=lambda x: x[2], reverse=True)
-    for ticker, name, ratio in surge_stocks[:10]:
-        rows.append([now, '出来高急増', f'{name}（{ticker}）', f'{latest_trading_date} {ratio:.1f}倍', '', ''])
-        print(f'出来高急増: {name} {latest_trading_date} {ratio:.1f}倍')
+    recorded_dates = {r[3].split()[0] for r in sheet.get_all_values() if len(r) >= 4 and r[1] == '出来高急増'}
+    if latest_trading_date in recorded_dates:
+        print(f'出来高急増: {latest_trading_date} は記録済みのためスキップ')
+    else:
+        for ticker, name, ratio in surge_stocks[:10]:
+            rows.append([now, '出来高急増', f'{name}（{ticker}）', f'{latest_trading_date} {ratio:.1f}倍', '', ''])
+            print(f'出来高急増: {name} {latest_trading_date} {ratio:.1f}倍')
 
 except Exception as e:
     print(f'出来高急増取得失敗: {e}')
