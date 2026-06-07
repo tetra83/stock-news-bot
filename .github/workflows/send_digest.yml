@@ -25,7 +25,7 @@ jobs:
       - name: Write credentials file
         env:
           GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: echo "$GOOGLE_CREDENTIALS_JSON" > credentials.json
+        run: python -c "import os; open('credentials.json','w').write(os.environ['GOOGLE_CREDENTIALS_JSON'])"
 
       - name: Send digest email
         env:
