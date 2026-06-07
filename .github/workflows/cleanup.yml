@@ -21,7 +21,9 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Write credentials file
-        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: echo "$GOOGLE_CREDENTIALS_JSON" > credentials.json
 
       - name: Delete rows older than 30 days
         env:
