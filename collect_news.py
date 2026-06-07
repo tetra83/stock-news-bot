@@ -180,5 +180,5 @@ except Exception as e:
     print(f'EODHD 決算カレンダー取得失敗: {e}')
 
 # Sheetsに追記
-sheet.append_rows(rows)
+sheet.append_rows(rows, insert_data_option='INSERT_ROWS')
 print(f'{len(rows)}件追加しました')

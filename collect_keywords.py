@@ -189,7 +189,7 @@ def _save_to_sheet(articles: list[dict]) -> int:
         for a in articles
     ]
     if rows:
-        sheet.append_rows(rows)
+        sheet.append_rows(rows, insert_data_option='INSERT_ROWS')
     return len(rows)
 
 

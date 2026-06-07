@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     rows = collect()
     if rows:
-        sheet.append_rows(rows)
+        sheet.append_rows(rows, insert_data_option='INSERT_ROWS')
         print(f'{len(rows)}件追加しました')
     else:
         print('保存データなし')
