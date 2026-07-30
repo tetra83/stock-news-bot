@@ -5,7 +5,7 @@ import os
 
 CREDENTIALS_FILE = os.environ.get('CREDENTIALS_FILE', 'credentials.json')
 SHEET_ID = os.environ.get('SHEET_ID', '')
-RETENTION_DAYS = 30
+RETENTION_DAYS = 15
 
 scopes = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scopes)
