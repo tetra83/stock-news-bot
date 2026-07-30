@@ -28,8 +28,15 @@ for i, row in enumerate(all_rows[1:], start=2):
     except ValueError:
         pass
 
-for row_num in sorted(old_rows, reverse=True):
-    sheet.delete_rows(row_num)
+ranges = []
+for row_num in sorted(old_rows):
+    if ranges and row_num == ranges[-1][1] + 1:
+        ranges[-1][1] = row_num
+    else:
+        ranges.append([row_num, row_num])
+
+for start, end in sorted(ranges, reverse=True):
+    sheet.delete_rows(start, end)
 print(f'{len(old_rows)}行削除（{RETENTION_DAYS}日超過）')
 
 all_rows = sheet.get_all_values()
